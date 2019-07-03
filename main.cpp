@@ -6,6 +6,8 @@
 #include "genann.h"
 #include "AudioFile.h"
 #include <string.h>
+#include <chrono>
+#include <ctime>
 using namespace std;
 const int amountOfPress=78;
 const int amountOfNotPress=65;
@@ -197,6 +199,89 @@ void train(genann*ann,unsigned int max){
 
     }
 }
+void whileTrain(genann*ann,unsigned long durationS){
+    unsigned int p,np,choi;
+    auto start = std::chrono::system_clock::now();
+    while(true){
+        choi=rand()%2;
+        //cout<<choi<<endl;
+        if(choi==0){//p
+            p=rand()%amountOfPress;
+            int maxS=press[p].getNumSamplesPerChannel();
+            double*samp=(double*)malloc(sizeof(double)*sampleSize);
+            double*output=(double*)malloc(sizeof(double)*1);
+            *output=1.0;
+            int value=0;
+            for(int pr=0;pr<maxS;pr++){
+                *(samp+value)=press[p].samples[0][pr];
+                *(samp+value)+=1;
+                *(samp+value)/=2;
+                value++;
+                if(value>=sampleSize){
+                    value=0;
+                    genann_train(ann,samp,output,learnRate);
+                    //cout<<"Train 0"<<endl;
+                }
+            }
+            value=0;
+            for(int pr=0;pr<maxS;pr++){
+                *(samp+value)=press[p].samples[1][pr];
+                *(samp+value)+=1;
+                *(samp+value)/=2;
+                value++;
+                if(value>=sampleSize){
+                    value=0;
+                    genann_train(ann,samp,output,learnRate);
+                    //cout<<"Train 1"<<endl;
+                }
+            }
+            free(samp);
+            free(output);
+        }
+        else{//np
+            np=rand()%amountOfNotPress;
+            int maxS=notPress[np].getNumSamplesPerChannel();
+            double*samp=(double*)malloc(sizeof(double)*sampleSize);
+            double*output=(double*)malloc(sizeof(double)*1);
+            *output=0.0;
+            int value=0;
+            for(int pr=0;pr<maxS;pr++){
+                *(samp+value)=notPress[np].samples[0][pr];
+                *(samp+value)+=1;
+                *(samp+value)/=2;
+                value++;
+                if(value>=sampleSize){
+                    value=0;
+                    genann_train(ann,samp,output,learnRate);
+                    //cout<<"Train np 0"<<endl;
+                }
+            }
+            value=0;
+            for(int pr=0;pr<maxS;pr++){
+                *(samp+value)=notPress[np].samples[1][pr];
+                *(samp+value)+=1;
+                *(samp+value)/=2;
+                value++;
+                if(value>=sampleSize){
+                    value=0;
+                    genann_train(ann,samp,output,learnRate);
+                    //cout<<"Train np 1"<<endl;
+                }
+            }
+            free(samp);
+            free(output);
+        }
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end-start;
+
+        //std::cout << "finished computation at " << std::ctime(&end_time)
+              //<< "elapsed time: " << elapsed_seconds.count() << "s\n";
+        if(elapsed_seconds.count()>durationS){
+            cout<<"Time: " << elapsed_seconds.count()<<"s"<<endl;
+            break;
+        }
+    }
+}
 void testAnn(genann*ann){
     //Go through each of the files and sample from there
     //print which ones the ai thinks is a press
@@ -241,7 +326,8 @@ int main(int argc, char *argv[])
     //Load data
     genann*ann=ginit();
 
-    train(ann,0x1ffff);
+    //train(ann,0x1ffff);
+    whileTrain(ann,56460);
     testAnn(ann);
     
     closeG(ann);
