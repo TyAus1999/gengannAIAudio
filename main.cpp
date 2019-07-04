@@ -14,7 +14,7 @@ const int amountOfNotPress=65;
 AudioFile<double> allFiles[240];
 AudioFile<double> press[amountOfPress];
 AudioFile<double> notPress[amountOfNotPress];
-int sampleSize=200;
+int sampleSize=100;
 double learnRate=0.01;
 double fSig(double in){
     return in/(1+abs(in));
@@ -93,7 +93,7 @@ genann* ginit(){
     FILE* gda=fopen(fName,"r");
     genann*ann;
     if(!gda){
-        ann=genann_init(sampleSize,5,25,1);
+        ann=genann_init(sampleSize,4,20,1);
         cout<<"Init"<<endl;
     }
     else{
@@ -339,6 +339,8 @@ void testAnnPickedOut(genann*ann){
     test[3].load("Test4.wav");
     test[4].load("Test5.wav");
 
+    vector<double> confidence;
+
     for(int i=0;i<5;i++){
         int maxS=test[i].getNumSamplesPerChannel();
         double*samp=(double*)malloc(sizeof(double)*sampleSize);
@@ -366,7 +368,16 @@ void testAnnPickedOut(genann*ann){
             }
         }
         //average=fSig(average);
+        confidence.push_back(average);
         cout<<"Value for Test"<<(i+1)<<".wav is: "<<average<<endl;
+    }
+    double totalConfidence=0;
+    for(int i=0;i<confidence.size();i++){
+        totalConfidence+=confidence[i];
+    }
+    cout<<"Total confidence: " << totalConfidence<<endl;
+    for (int i=0;i<confidence.size();i++){
+        cout<<confidence[i]/totalConfidence<<endl;
     }
 }
 
@@ -378,8 +389,8 @@ int main(int argc, char *argv[])
     //Load data
     genann*ann=ginit();
 
-    //train(ann,0xfff);
-    whileTrain(ann,120);
+    //train(ann,100);
+    //whileTrain(ann,2400);
     //testAnn(ann);
     testAnnPickedOut(ann);
     
