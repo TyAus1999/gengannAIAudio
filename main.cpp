@@ -14,9 +14,11 @@ const int amountOfNotPress=65;
 AudioFile<double> allFiles[240];
 AudioFile<double> press[amountOfPress];
 AudioFile<double> notPress[amountOfNotPress];
-int sampleSize=100;
+int sampleSize=200;
 double learnRate=0.01;
-
+double fSig(double in){
+    return in/(1+abs(in));
+}
 void addingTest(){
     const char* fName="gandat.ann";
     FILE *gandat=fopen(fName,"r");
@@ -91,7 +93,7 @@ genann* ginit(){
     FILE* gda=fopen(fName,"r");
     genann*ann;
     if(!gda){
-        ann=genann_init(100,4,20,1);
+        ann=genann_init(sampleSize,5,25,1);
         cout<<"Init"<<endl;
     }
     else{
@@ -201,6 +203,7 @@ void train(genann*ann,unsigned int max){
 }
 void whileTrain(genann*ann,unsigned long durationS){
     unsigned int p,np,choi;
+    unsigned int prevValue=0;
     auto start = std::chrono::system_clock::now();
     while(true){
         choi=rand()%2;
@@ -276,6 +279,11 @@ void whileTrain(genann*ann,unsigned long durationS){
 
         //std::cout << "finished computation at " << std::ctime(&end_time)
               //<< "elapsed time: " << elapsed_seconds.count() << "s\n";
+        if(prevValue!=(unsigned int)elapsed_seconds.count()){
+            cout<<"Time left: " << (unsigned int)(durationS-elapsed_seconds.count())<<"s"<<endl;
+            prevValue=(unsigned int)elapsed_seconds.count();
+        }
+        
         if(elapsed_seconds.count()>durationS){
             cout<<"Time: " << elapsed_seconds.count()<<"s"<<endl;
             break;
@@ -312,12 +320,56 @@ void testAnn(genann*ann){
                 average+=*genann_run(ann,samp);
             }
         }
-        average/=maxS;
+        //average/=maxS;
+        //average/=2;
+        //cout<<average<<endl;
+        //average=average/(double)2;
         thoughts.push_back(average);
-        //if(average>0.6)
-            cout<<"I think that Machine-" << (file+1)<< " is " <<(average*100)<<"% a press"<<endl;
+        //average*=100;
+        if(average>150)
+            cout<<"The value for Machine-" << (file+1)<< " is " <<average<<endl;
+    }
+    
+}
+void testAnnPickedOut(genann*ann){
+    AudioFile<double> test[5];
+    test[0].load("Test1.wav");
+    test[1].load("Test2.wav");
+    test[2].load("Test3.wav");
+    test[3].load("Test4.wav");
+    test[4].load("Test5.wav");
+
+    for(int i=0;i<5;i++){
+        int maxS=test[i].getNumSamplesPerChannel();
+        double*samp=(double*)malloc(sizeof(double)*sampleSize);
+        int value=0;
+        double average=0;
+        for(int i2=0;i2<maxS;i2++){
+            *(samp+value)=test[i].samples[0][i2];
+            *(samp+value)+=1;
+            *(samp+value)/=2;
+            value++;
+            if(value>=sampleSize){
+                value=0;
+                average+=*genann_run(ann,samp);
+            }
+        }
+        value=0;
+        for(int i2=0;i2<maxS;i2++){
+            *(samp+value)=test[i].samples[1][i2];
+            *(samp+value)+=1;
+            *(samp+value)/=2;
+            value++;
+            if(value>=sampleSize){
+                value=0;
+                average+=*genann_run(ann,samp);
+            }
+        }
+        //average=fSig(average);
+        cout<<"Value for Test"<<(i+1)<<".wav is: "<<average<<endl;
     }
 }
+
 int main(int argc, char *argv[])
 {
     loadAllData();
@@ -326,9 +378,10 @@ int main(int argc, char *argv[])
     //Load data
     genann*ann=ginit();
 
-    //train(ann,0x1ffff);
-    whileTrain(ann,56460);
-    testAnn(ann);
+    //train(ann,0xfff);
+    whileTrain(ann,120);
+    //testAnn(ann);
+    testAnnPickedOut(ann);
     
     closeG(ann);
 
