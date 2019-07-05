@@ -8,7 +8,9 @@
 #include <assert.h>
 class drawingLib{
     public:
-        drawingLib(int width,int height,void F()){
+        drawingLib(int width,int height){
+            drawingLib::width=width;
+            drawingLib::height=height;
             char black_bits[]="#000000";
             char white_bits[]="#FFFFFF";
             char red_bits[]="#FF0000";
@@ -49,7 +51,10 @@ class drawingLib{
                 if(e.type==MapNotify)break;
             }
             gc=XCreateGC(dpy,w,0,NULL);
-            std::thread keyPressThread(F);
+            //std::thread keyPressThread(F);
+        }
+        void close(){
+            XCloseDisplay(dpy);
         }
         void drawLine(int x,int y,int endX,int endY,int colour){
             //0=black, 1=white, 2=red, 3=green, 4=blue, 5=yellow
@@ -65,6 +70,8 @@ class drawingLib{
         void sleepM(int n){
             std::this_thread::sleep_for(std::chrono::milliseconds(n));
         }
+        int getWidth(){return width;}
+        int getHeight(){return height;}
     private:
         Display* dpy;
         GC gc;
@@ -72,17 +79,6 @@ class drawingLib{
         XColor colours[6];
         Colormap colormap;
         Window w;
+        int width,height;
         //std::thread keyPressThread;
-};
-class Shape{
-    public:
-        Shape(int x, int y, int colour){
-            Shape::x=x;
-            Shape::y=y;
-            Shape::colour=colour;
-        }
-
-    private:
-        int x,y;
-        int colour;
 };
