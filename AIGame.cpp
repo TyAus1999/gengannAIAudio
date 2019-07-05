@@ -2,7 +2,7 @@
 #include "genann.h"
 #include "drawingLib.h"
 #include "AIGamePong.h"
-
+//max hits:12, average 2.36
 using namespace std;
 void closeG(genann * ann){
     const char* fName="gandatPong.ann";
@@ -16,7 +16,7 @@ genann* ginit(){
     FILE* gda=fopen(fName,"r");
     genann*ann;
     if(!gda){
-        ann=genann_init(4,6,10,2);
+        ann=genann_init(3,1,5,2);
         cout<<"Init"<<endl;
     }
     else{
@@ -38,7 +38,7 @@ int main(void)
 
     genann*ann;
     ann=ginit();
-    double*inputs=(double*)malloc(sizeof(double)*4);
+    double*inputs=(double*)malloc(sizeof(double)*3);
     //0=rbx,1=rxy,2=px,3=py
     double*output=(double*)malloc(sizeof(double)*2);
 
@@ -47,7 +47,7 @@ int main(void)
 
     //bool goingUp=false;
     int times=0;
-    unsigned long maxHits=0,totalHits=0,maxGens=25;
+    unsigned long maxHits=0,totalHits=0,maxGens=100;
     double averageHits=0;
     while(times<maxGens){
         cout<<"Times: " << times<<endl;
@@ -64,17 +64,16 @@ int main(void)
             //make AI ball to counter pong paddle
             *inputs=(double)rb.getX();
             *(inputs+1)=(double)rb.getY();
-            *(inputs+2)=(double)p1.getX();
-            *(inputs+3)=(double)p1.getY();
+            *(inputs+2)=(double)p1.getY();
             double*tempP=(double*)genann_run(ann,inputs);
             *output=*tempP;
             *(output+1)=*(tempP+1);
             
             
-            if(*output>=0.7 && *(output+1)<0.7){
+            if(*output>=0.8 && *(output+1)<0.8){
                 p1.moveDown();//Make paddle move by percentage
             }
-            else if(*output<0.7 && *(output+1)>=0.7){
+            else if(*output<0.8 && *(output+1)>=0.8){
                 p1.moveUp();
             }
             /*
@@ -89,12 +88,12 @@ int main(void)
             if(rb.getY()+(rb.getHeight()/2)<p1.getY()+(p1.getHeight()/2)){//higher
                 *desire=0;
                 *(desire+1)=1;
-                genann_train(ann,inputs,desire,0.1);
+                genann_train(ann,inputs,desire,0.5);
             }
             else if(rb.getY()+(rb.getHeight()/2)>p1.getY()+(p1.getHeight()/2)){//lower
                 *desire=1;
                 *(desire+1)=0;
-                genann_train(ann,inputs,desire,0.1);
+                genann_train(ann,inputs,desire,0.5);
             }
             /*
             if(goingUp){
@@ -111,13 +110,14 @@ int main(void)
             }
             b.move();
             */
-        dhandle.sleepM(5);
+        //dhandle.sleepM(5);
         }
         if(rb.getHits()>maxHits)maxHits=rb.getHits();
         totalHits+=rb.getHits();
         times++;
         averageHits=(double)totalHits/(double)times;
     }
+    cout<<" Times: " << times<<" Max hits: " << maxHits<<" Average Hits: "<<averageHits<< endl; 
     dhandle.close();
     closeG(ann);
     free(inputs);
